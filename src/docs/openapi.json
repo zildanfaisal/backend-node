@@ -1,0 +1,589 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Nutech Assignment API",
+    "version": "1.0.0",
+    "description": "REST API untuk Registrasi, Login, Profile, Banner, Services, Balance, Top Up, dan Transaksi. Response mengikuti kontrak (status/message/data)."
+  },
+  "servers": [{ "url": "http://localhost:3000", "description": "Local" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ApiBase": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "integer" },
+          "message": { "type": "string" }
+        },
+        "required": ["status", "message"]
+      },
+      "RegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "password": { "type": "string", "minLength": 6 }
+        },
+        "required": ["email", "password"]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        },
+        "required": ["email", "password"]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "profile_image": { "type": "string", "format": "uri" }
+        },
+        "required": ["email"]
+      },
+      "Banner": {
+        "type": "object",
+        "properties": {
+          "banner_name": { "type": "string" },
+          "banner_image": { "type": "string", "format": "uri" },
+          "description": { "type": "string" }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "service_code": { "type": "string" },
+          "service_name": { "type": "string" },
+          "service_icon": { "type": "string", "format": "uri" },
+          "service_tariff": { "type": "number" }
+        }
+      },
+      "BalanceResponseData": {
+        "type": "object",
+        "properties": { "balance": { "type": "number" } },
+        "required": ["balance"]
+      },
+      "TransactionResponseData": {
+        "type": "object",
+        "properties": {
+          "invoice_number": { "type": "string" },
+          "service_code": { "type": "string" },
+          "service_name": { "type": "string" },
+          "transaction_type": {
+            "type": "string",
+            "enum": ["TOPUP", "PAYMENT"]
+          },
+          "total_amount": { "type": "number" },
+          "created_on": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HistoryRecord": {
+        "type": "object",
+        "properties": {
+          "invoice_number": { "type": "string" },
+          "transaction_type": { "type": "string" },
+          "description": { "type": "string" },
+          "total_amount": { "type": "number" },
+          "created_on": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HistoryResponseData": {
+        "type": "object",
+        "properties": {
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "records": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HistoryRecord" }
+          }
+        }
+      },
+      "Error": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiBase" },
+          {
+            "type": "object",
+            "properties": { "data": { "nullable": true } },
+            "example": { "status": 102, "message": "Bad request", "data": null }
+          }
+        ]
+      },
+      "Success": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiBase" },
+          {
+            "type": "object",
+            "properties": { "data": {} },
+            "example": { "status": 0, "message": "Sukses", "data": {} }
+          }
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/registration": {
+      "post": {
+        "summary": "Registrasi",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegistrationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 0,
+                      "message": "Registrasi berhasil silahkan login",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "emailFormat": {
+                    "value": {
+                      "status": 102,
+                      "message": "Paramter email tidak sesuai format",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Berhasil login",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 0,
+                      "message": "Login Sukses",
+                      "data": { "token": "<jwt>" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "emailFormat": {
+                    "value": {
+                      "status": 102,
+                      "message": "Paramter email tidak sesuai format",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "wrong": {
+                    "value": {
+                      "status": 103,
+                      "message": "Username atau password salah",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "summary": "Get profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 0,
+                      "message": "Sukses",
+                      "data": {
+                        "email": "user@nutech-integrasi.com",
+                        "first_name": "User",
+                        "last_name": "Nutech",
+                        "profile_image": "https://yoururlapi.com/profile.jpeg"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "examples": {
+                  "unauth": {
+                    "value": {
+                      "status": 108,
+                      "message": "Token tidak tidak valid atau kadaluwarsa",
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update profile name",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "first_name": { "type": "string" },
+                  "last_name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile/image": {
+      "put": {
+        "summary": "Update profile image",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/banner": {
+      "get": {
+        "summary": "List banners",
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 0,
+                      "message": "Sukses",
+                      "data": [
+                        {
+                          "banner_name": "Banner 1",
+                          "banner_image": "https://nutech-integrasi.app/dummy.jpg",
+                          "description": "Lerem Ipsum Dolor sit amet"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services": {
+      "get": {
+        "summary": "List services",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/balance": {
+      "get": {
+        "summary": "Get balance",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Get balance/Saldo berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "examples": {
+                  "ok": {
+                    "value": {
+                      "status": 0,
+                      "message": "Get Balance Berhasil",
+                      "data": { "balance": 1000000 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/topup": {
+      "post": {
+        "summary": "Top up",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "top_up_amount": { "type": "number" } },
+                "required": ["top_up_amount"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction": {
+      "post": {
+        "summary": "Create payment transaction",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "service_code": { "type": "string" } },
+                "required": ["service_code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transaksi berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/history": {
+      "get": {
+        "summary": "Get transaction history",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": { "type": "integer", "default": 0 }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "default": 10 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get history transaksi berhasil",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
