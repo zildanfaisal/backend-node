@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Nutech Assignment API",
+    "title": "API Contract SIMS PPOB - Muhammad Zildan Faisal",
     "version": "1.0.0",
-    "description": "REST API untuk Registrasi, Login, Profile, Banner, Services, Balance, Top Up, dan Transaksi. Response mengikuti kontrak (status/message/data)."
+    "description": "Documentation for Take Home Test API."
   },
   "servers": [{ "url": "http://localhost:3000", "description": "Local" }],
   "components": {
@@ -291,7 +291,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/profile/update": {
       "put": {
         "summary": "Update profile name",
         "security": [{ "bearerAuth": [] }],

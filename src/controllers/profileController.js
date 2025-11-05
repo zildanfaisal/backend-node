@@ -5,6 +5,7 @@ import {
   updateUserProfileImage,
 } from "../models/userModel.js";
 import path from "path";
+import fs from "fs";
 
 export const getProfile = async (req, res, next) => {
   try {
@@ -54,13 +55,46 @@ export const updateProfile = async (req, res, next) => {
 
 export const updateProfileImage = async (req, res, next) => {
   try {
-    if (!req.file) {
+    let fileUrl = null;
+
+    if (req.file) {
+      // Uploaded via multipart/form-data
+      fileUrl = `${req.protocol}://${req.get("host")}/uploads/${path.basename(
+        req.file.path
+      )}`;
+    } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      // Raw binary upload
+      const ct = (req.headers["content-type"] || "").toLowerCase();
+      const allowed = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/octet-stream", // some clients send this in binary mode
+      ];
+      if (!allowed.includes(ct)) {
+        return apiError(res, 400, 102, "Format Image tidak sesuai");
+      }
+
+      const extMap = {
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif",
+        "image/webp": ".webp",
+      };
+      const ext = extMap[ct] || ".jpg";
+      const filename = `upload-${Date.now()}${ext}`;
+      const uploadDir = path.resolve("uploads");
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      const filePath = path.join(uploadDir, filename);
+      fs.writeFileSync(filePath, req.body);
+      fileUrl = `${req.protocol}://${req.get("host")}/uploads/${filename}`;
+    } else {
       return apiError(res, 400, 102, "Format Image tidak sesuai");
     }
 
-    const fileUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/uploads/${path.basename(req.file.path)}`;
     const updated = await updateUserProfileImage(req.user.id, fileUrl);
 
     return apiSuccess(res, "Update Profile Image berhasil", {
