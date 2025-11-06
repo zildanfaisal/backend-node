@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "description": "Documentation for Take Home Test API."
   },
-  "servers": [{ "url": "http://localhost:3000", "description": "Local" }],
+  "servers": [
+    { "url": "/", "description": "Same origin (works in local & Railway)" }
+  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {

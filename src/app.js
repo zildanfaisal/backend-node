@@ -12,6 +12,7 @@ import { errorHandler } from "./middlewares/errorMiddleware.js";
 const app = express();
 
 // Middlewares Global
+app.set("trust proxy", 1);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

@@ -4,9 +4,32 @@ const { Pool } = pkg;
 import dotenv from "dotenv";
 dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Support both DATABASE_URL and POSTGRES_URL from Railway, enable SSL in production
+const connectionString =
+  process.env.DATABASE_URL || process.env.POSTGRES_URL || undefined;
+
+const pool = new Pool(
+  connectionString
+    ? {
+        connectionString,
+        ssl:
+          process.env.NODE_ENV === "production"
+            ? { rejectUnauthorized: false }
+            : false,
+      }
+    : {
+        host: process.env.PGHOST || "127.0.0.1",
+        port: Number(process.env.PGPORT || 5432),
+        user: process.env.PGUSER || "postgres",
+        password: process.env.PGPASSWORD || "",
+        database: process.env.PGDATABASE || "backend-node",
+        ssl:
+          process.env.NODE_ENV === "production"
+            ? { rejectUnauthorized: false }
+            : false,
+        max: 10,
+      }
+);
 
 pool.on("connect", () => {
   console.log("Connected to the database");
